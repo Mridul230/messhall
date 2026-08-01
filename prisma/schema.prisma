@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+   provider = "prisma-client-js"
+  
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model Student {
+  id           Int       @id @default(autoincrement())
+  name         String
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+
+  bookingMemberships BookingMember[]
+}
+
+model Batch {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  startTime String
+  endTime   String
+  createdAt DateTime @default(now())
+
+  pools     Pool[]
+}
+
+enum PoolType {
+  BOYS
+  GIRLS
+  MIXED
+}
+
+model Pool {
+  id             Int      @id @default(autoincrement())
+  batch          Batch    @relation(fields: [batchId], references: [id])
+  batchId        Int
+  type           PoolType
+  capacity       Int
+  remainingSeats Int
+
+  bookings       Booking[]
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+model Booking {
+  id        Int           @id @default(autoincrement())
+  pool      Pool          @relation(fields: [poolId], references: [id])
+  poolId    Int
+  groupSize Int
+  status    BookingStatus @default(CONFIRMED)
+  createdAt DateTime      @default(now())
+
+  members   BookingMember[]
+}
+
+model BookingMember {
+  id        Int      @id @default(autoincrement())
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  bookingId Int
+  student   Student  @relation(fields: [studentId], references: [id])
+  studentId Int
+}

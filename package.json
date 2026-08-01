@@ -1,0 +1,31 @@
+{
+  "name": "messhall",
+  "version": "1.0.0",
+  "description": "A seat reservation system for college mess hall dinner batches — prevents overcrowding with concurrency-safe group bookings across boys/girls/mixed seating pools.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mridul230/messhall.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Mridul230/messhall/issues"
+  },
+  "homepage": "https://github.com/Mridul230/messhall#readme",
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3"
+  },
+  "devDependencies": {
+    "prisma": "^6.19.3"
+  }
+}
