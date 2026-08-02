@@ -1,5 +1,6 @@
 {
   "name": "messhall",
+  "type": "module",
   "version": "1.0.0",
   "description": "A seat reservation system for college mess hall dinner batches — prevents overcrowding with concurrency-safe group bookings across boys/girls/mixed seating pools.",
   "main": "index.js",
@@ -19,6 +20,7 @@
   "homepage": "https://github.com/Mridul230/messhall#readme",
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "axios": "^1.19.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
