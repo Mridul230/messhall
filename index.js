@@ -1,3 +1,5 @@
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
@@ -21,6 +23,18 @@ function requireAuth(req, res, next) {
 }
 
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: { origin: '*' }, // tighten this to your frontend's actual origin later
+});
+
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
 const prisma = new PrismaClient();
 const PORT = 3001;
 
@@ -114,6 +128,9 @@ app.get('/pools', async (req, res) => {
     res.status(500).json({ error: 'Could not fetch pools' });
   }
 });
+
+// ---------- BOOKINGS ----------
+
 app.post('/bookings', requireAuth, async (req, res) => {
   const { poolId, studentIds } = req.body; // studentIds: array of 1-4 student IDs
   const groupSize = studentIds.length;
@@ -154,6 +171,7 @@ app.post('/bookings', requireAuth, async (req, res) => {
     });
 
     res.status(201).json(result);
+    io.emit('poolUpdated', { poolId: result.poolId });
   } catch (error) {
     if (error.message === 'NOT_ENOUGH_SEATS') {
       return res.status(409).json({ error: 'Not enough seats remaining in this pool' });
@@ -163,6 +181,48 @@ app.post('/bookings', requireAuth, async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+app.patch('/bookings/:id/cancel', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await prisma.$transaction(async (tx) => {
+      const booking = await tx.booking.findUnique({ where: { id: parseInt(id) } });
+
+      if (!booking) {
+        throw new Error('NOT_FOUND');
+      }
+      if (booking.status === 'CANCELLED') {
+        throw new Error('ALREADY_CANCELLED');
+      }
+
+      const updatedBooking = await tx.booking.update({
+        where: { id: parseInt(id) },
+        data: { status: 'CANCELLED' },
+      });
+
+      // Give the seats back to the pool
+      await tx.pool.update({
+        where: { id: booking.poolId },
+        data: { remainingSeats: { increment: booking.groupSize } },
+      });
+
+      return updatedBooking;
+    });
+
+    res.json(result);
+    io.emit('poolUpdated', { poolId: result.poolId });
+  } catch (error) {
+    if (error.message === 'NOT_FOUND') {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+    if (error.message === 'ALREADY_CANCELLED') {
+      return res.status(400).json({ error: 'Booking is already cancelled' });
+    }
+    console.error(error);
+    res.status(400).json({ error: 'Could not cancel booking' });
+  }
+});
+
+httpServer.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
